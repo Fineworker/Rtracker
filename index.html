@@ -1,0 +1,776 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CubeCoach — Rubik's Cube Trainer</title>
+<style>
+:root {
+  --bg: #0b1020;
+  --panel: #141c30;
+  --panel2: #1b2640;
+  --text: #edf2ff;
+  --muted: #9aa8c5;
+  --accent: #8b9dff;
+  --green: #65e6b2;
+  --red: #ff8293;
+  --border: #2a3653;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #19264a, var(--bg) 55%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+button, input, select, textarea { font: inherit; }
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  background: var(--panel2);
+  transition: filter .15s, transform .15s;
+}
+button:hover { filter: brightness(1.18); }
+button:active { transform: scale(.98); }
+button.primary {
+  background: var(--accent);
+  color: #10152c;
+  border-color: transparent;
+  font-weight: 750;
+}
+button.danger { color: var(--red); }
+input, select, textarea {
+  background: #0e1628;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px;
+  width: 100%;
+}
+label { display: block; color: var(--muted); font-size: .85rem; margin-bottom: 6px; }
+header {
+  max-width: 1200px;
+  margin: auto;
+  padding: 26px 22px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 46px; height: 46px; border-radius: 13px;
+  background: linear-gradient(135deg, #8b9dff, #65e6b2);
+  display: grid; place-items: center;
+  color: #10152c; font-weight: 900; font-size: 1.5rem;
+}
+h1 { margin: 0; font-size: 1.55rem; letter-spacing: -.04em; }
+.subtitle { color: var(--muted); font-size: .88rem; margin-top: 3px; }
+main { max-width: 1200px; margin: auto; padding: 18px 22px 50px; }
+.nav {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 8px 0 20px;
+}
+.nav button { white-space: nowrap; color: var(--muted); }
+.nav button.active { background: var(--accent); color: #10152c; font-weight: 750; }
+.panel {
+  background: rgba(20, 28, 48, .94);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  min-width: 0;
+}
+h2 { margin: 0 0 6px; font-size: 1.2rem; }
+h3 { margin: 0 0 12px; font-size: 1rem; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 16px;
+}
+.stat { padding: 17px; }
+.stat .label { color: var(--muted); font-size: .83rem; }
+.stat .value { font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; margin-top: 7px; }
+.stat .hint { color: var(--muted); font-size: .76rem; margin-top: 3px; }
+.grid-two { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row > .grow { flex: 1; min-width: 130px; }
+.field { min-width: 0; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.time-input { font-size: 1.2rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.timer-display {
+  text-align: center; font-size: clamp(2.8rem, 9vw, 5.5rem);
+  font-weight: 850; font-variant-numeric: tabular-nums;
+  letter-spacing: -.055em; padding: 20px 0 12px;
+}
+.timer-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.timer-controls button { min-width: 105px; }
+.category-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 12px 0; }
+.chip {
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 6px 11px; color: var(--muted); font-size: .8rem;
+}
+.chip.active { color: var(--text); border-color: var(--accent); background: #27325b; }
+.scramble {
+  background: #0d1527; border: 1px dashed #39476a; border-radius: 12px;
+  padding: 15px; line-height: 1.8; font-size: 1.02rem;
+  word-spacing: 5px; min-height: 72px;
+}
+canvas { width: 100%; height: 190px; display: block; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-size: .78rem; font-weight: 650; }
+td { font-variant-numeric: tabular-nums; }
+.empty { padding: 25px 10px; text-align: center; color: var(--muted); }
+.case-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.case-card { background: #10192c; border: 1px solid var(--border); border-radius: 13px; padding: 14px; }
+.case-card .algorithm { margin-top: 10px; line-height: 1.7; overflow-wrap: anywhere; font-size: .9rem; }
+.case-card .case-title { font-weight: 750; }
+.tag { font-size: .72rem; color: var(--green); background: #17352f; padding: 4px 7px; border-radius: 6px; }
+.notice { border-radius: 10px; padding: 12px; background: #192744; color: #c7d4ff; font-size: .85rem; line-height: 1.6; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 17px 0; }
+.hidden { display: none !important; }
+footer { color: var(--muted); font-size: .78rem; text-align: center; padding: 24px 0 5px; }
+@media (max-width: 800px) {
+  .dashboard { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .grid-two { grid-template-columns: 1fr; }
+  .case-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 480px) {
+  main { padding: 12px 12px 35px; }
+  header { padding: 20px 14px 8px; }
+  .panel { padding: 15px; }
+  .case-grid { grid-template-columns: 1fr; }
+  .fields { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">C</div>
+    <div>
+      <h1>CubeCoach</h1>
+      <div class="subtitle">Train smarter. Turn faster.</div>
+    </div>
+  </div>
+  <div class="row">
+    <button id="exportBtn">Export CSV</button>
+    <button id="importBtn">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv,text/csv" class="hidden">
+  </div>
+</header>
+
+<main>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="active" data-page="dashboard">Dashboard</button>
+    <button data-page="timer">Solve timer</button>
+    <button data-page="history">Solve history</button>
+    <button data-page="cases">Algorithm library</button>
+  </nav>
+
+  <section id="page-dashboard">
+    <div class="dashboard">
+      <div class="panel stat">
+        <div class="label">Total solves</div>
+        <div class="value" id="totalStat">0</div>
+        <div class="hint">All recorded attempts</div>
+      </div>
+      <div class="panel stat">
+        <div class="label">Best time</div>
+        <div class="value" id="bestStat">—</div>
+        <div class="hint">Fastest recorded solve</div>
+      </div>
+      <div class="panel stat">
+        <div class="label">Session average</div>
+        <div class="value" id="avgStat">—</div>
+        <div class="hint">Mean of recorded solves</div>
+      </div>
+      <div class="panel stat">
+        <div class="label">Median time</div>
+        <div class="value" id="medianStat">—</div>
+        <div class="hint">Middle recorded result</div>
+      </div>
+    </div>
+
+    <div class="grid-two">
+      <div class="panel">
+        <h2>Progress over time</h2>
+        <p class="muted small">Your latest 20 solves, in chronological order.</p>
+        <canvas id="progressChart" aria-label="Solve time chart"></canvas>
+      </div>
+      <div class="panel stack">
+        <div>
+          <h2>Quick add</h2>
+          <p class="muted small">Record a solve without opening the timer.</p>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label for="quickTime">Solve time (seconds)</label>
+            <input id="quickTime" type="number" min="0.01" step="0.01" placeholder="e.g. 18.42">
+          </div>
+          <div class="field">
+            <label for="quickCategory">Practice type</label>
+            <select id="quickCategory">
+              <option>3x3</option><option>Cross</option><option>F2L</option>
+              <option>OLL</option><option>PLL</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <button class="primary" id="quickAdd">Add solve</button>
+        <hr>
+        <div>
+          <h3>Training tip</h3>
+          <p class="muted small">Focus on smooth turning and reducing pauses. Track one skill at a time so you can see what is improving.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-timer" class="hidden">
+    <div class="grid-two">
+      <div class="panel">
+        <h2>Solve timer</h2>
+        <p class="muted small">Use the buttons or press Space to start and stop.</p>
+        <div class="timer-display" id="timerDisplay">0.00</div>
+        <div class="timer-controls">
+          <button class="primary" id="timerToggle">Start</button>
+          <button id="timerReset">Reset</button>
+        </div>
+        <hr>
+        <label for="timerCategory">Practice type</label>
+        <select id="timerCategory">
+          <option>3x3</option><option>Cross</option><option>F2L</option>
+          <option>OLL</option><option>PLL</option><option>Other</option>
+        </select>
+        <p class="muted small">This timer records elapsed time; it does not automatically inspect or validate your cube state.</p>
+      </div>
+      <div class="panel stack">
+        <div>
+          <h2>Practice scramble</h2>
+          <p class="muted small">Generate a fresh random-move scramble for practice.</p>
+        </div>
+        <div class="scramble" id="scrambleText">Press “New scramble” to begin.</div>
+        <button id="newScramble" class="primary">New scramble</button>
+        <div class="notice">Scrambles are generated from random face moves. This is a convenient practice scramble generator, not an official competition scramble validator.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-history" class="hidden">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:15px">
+        <div>
+          <h2>Solve history</h2>
+          <p class="muted small">Review, filter, and remove recorded attempts.</p>
+        </div>
+        <div class="field" style="min-width:145px">
+          <label for="historyFilter">Practice type</label>
+          <select id="historyFilter">
+            <option value="All">All categories</option>
+            <option>3x3</option><option>Cross</option><option>F2L</option>
+            <option>OLL</option><option>PLL</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Time</th><th>Category</th><th>Date</th><th></th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div id="historyEmpty" class="empty">No solves recorded yet. Add your first solve from the timer or dashboard.</div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:15px">
+        <button class="danger" id="clearHistory">Clear all solves</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-cases" class="hidden">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2>Algorithm library</h2>
+          <p class="muted small">A small starter collection of commonly used algorithms.</p>
+        </div>
+        <div class="field" style="min-width:140px">
+          <label for="caseFilter">Category</label>
+          <select id="caseFilter">
+            <option value="All">All categories</option>
+            <option>PLL</option><option>OLL</option><option>F2L</option><option>Cross</option>
+          </select>
+        </div>
+      </div>
+      <div class="notice" style="margin:15px 0">Algorithms are notation examples and a starter subset, not a complete verified case database. Check each algorithm against your preferred method and cube orientation.</div>
+      <div class="case-grid" id="caseGrid"></div>
+    </div>
+  </section>
+
+  <footer>CubeCoach · Your practice data is saved locally in this browser.</footer>
+</main>
+
+<script>
+"use strict";
+
+const STORAGE_KEY = "cubecoach_solves_v1";
+let solves = loadSolves();
+let timerRunning = false;
+let timerStartedAt = 0;
+let elapsedBeforeStart = 0;
+let timerInterval = null;
+
+function loadSolves() {
+  try {
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    if (!Array.isArray(value)) return [];
+    return value.filter(s =>
+      s && Number.isFinite(Number(s.time)) &&
+      Number(s.time) > 0 && typeof s.category === "string"
+    ).map(s => ({
+      id: String(s.id || crypto.randomUUID?.() || Date.now() + Math.random()),
+      time: Number(s.time),
+      category: s.category,
+      date: s.date || new Date().toISOString()
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveSolves() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(solves));
+  } catch {
+    alert("Your browser could not save the data locally. You can export a CSV backup.");
+  }
+}
+
+function formatTime(seconds) {
+  return Number(seconds).toFixed(2) + "s";
+}
+
+function addSolve(time, category) {
+  time = Number(time);
+  if (!Number.isFinite(time) || time <= 0) {
+    alert("Enter a solve time greater than zero.");
+    return;
+  }
+  solves.push({
+    id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
+    time: Math.round(time * 1000) / 1000,
+    category: category || "3x3",
+    date: new Date().toISOString()
+  });
+  saveSolves();
+  renderAll();
+}
+
+function getStats(items) {
+  if (!items.length) return {best:null, avg:null, median:null};
+  const times = items.map(s => s.time);
+  const sorted = [...times].sort((a,b) => a-b);
+  const middle = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle-1] + sorted[middle]) / 2;
+  return {
+    best: Math.min(...times),
+    avg: times.reduce((a,b) => a+b, 0) / times.length,
+    median
+  };
+}
+
+function renderStats() {
+  const stats = getStats(solves);
+  document.getElementById("totalStat").textContent = solves.length;
+  document.getElementById("bestStat").textContent = stats.best === null ? "—" : formatTime(stats.best);
+  document.getElementById("avgStat").textContent = stats.avg === null ? "—" : formatTime(stats.avg);
+  document.getElementById("medianStat").textContent = stats.median === null ? "—" : formatTime(stats.median);
+}
+
+function renderHistory() {
+  const filter = document.getElementById("historyFilter").value;
+  const filtered = solves
+    .filter(s => filter === "All" || s.category === filter)
+    .slice()
+    .reverse();
+  const body = document.getElementById("historyBody");
+  const empty = document.getElementById("historyEmpty");
+  body.replaceChildren();
+  empty.classList.toggle("hidden", filtered.length > 0);
+
+  filtered.forEach((s, index) => {
+    const tr = document.createElement("tr");
+    const values = [
+      String(solves.length - solves.findIndex(x => x.id === s.id)),
+      formatTime(s.time),
+      s.category,
+      new Date(s.date).toLocaleString()
+    ];
+    values.forEach(value => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    const actionCell = document.createElement("td");
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.className = "danger";
+    remove.setAttribute("aria-label", "Delete solve " + s.time + " seconds");
+    remove.addEventListener("click", () => {
+      solves = solves.filter(x => x.id !== s.id);
+      saveSolves();
+      renderAll();
+    });
+    actionCell.appendChild(remove);
+    tr.appendChild(actionCell);
+    body.appendChild(tr);
+  });
+}
+
+function drawChart() {
+  const canvas = document.getElementById("progressChart");
+  const ctx = canvas.getContext("2d");
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(rect.width * dpr));
+  canvas.height = Math.max(1, Math.round(190 * dpr));
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = 190;
+  ctx.clearRect(0, 0, w, h);
+
+  const items = solves.slice(-20);
+  const styles = getComputedStyle(document.body);
+  const muted = styles.getPropertyValue("--muted").trim() || "#9aa8c5";
+  const border = styles.getPropertyValue("--border").trim() || "#2a3653";
+  const accent = styles.getPropertyValue("--accent").trim() || "#8b9dff";
+
+  if (!items.length) {
+    ctx.fillStyle = muted;
+    ctx.font = "13px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("Record solves to see your progress", w/2, h/2);
+    return;
+  }
+
+  const pad = {l:35, r:10, t:12, b:25};
+  const chartW = Math.max(1, w-pad.l-pad.r);
+  const chartH = h-pad.t-pad.b;
+  const values = items.map(s => s.time);
+  const min = Math.max(0, Math.min(...values) * .85);
+  const max = Math.max(...values) * 1.1 || 1;
+  const y = v => pad.t + chartH - ((v-min)/(max-min || 1))*chartH;
+  const x = i => pad.l + (items.length === 1 ? chartW/2 : i/(items.length-1)*chartW);
+
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 1;
+  ctx.fillStyle = muted;
+  ctx.font = "10px system-ui";
+  ctx.textAlign = "right";
+  for (let i=0; i<=3; i++) {
+    const val = min + (max-min)*i/3;
+    const yy = y(val);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, yy);
+    ctx.lineTo(w-pad.r, yy);
+    ctx.stroke();
+    ctx.fillText(val.toFixed(1)+"s", pad.l-5, yy+3);
+  }
+
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  values.forEach((v,i) => {
+    if (i === 0) ctx.moveTo(x(i),y(v));
+    else ctx.lineTo(x(i),y(v));
+  });
+  ctx.stroke();
+
+  values.forEach((v,i) => {
+    ctx.beginPath();
+    ctx.fillStyle = accent;
+    ctx.arc(x(i),y(v),3.2,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.fillStyle = muted;
+  ctx.textAlign = "center";
+  ctx.fillText("Oldest", pad.l, h-5);
+  ctx.fillText("Latest", w-pad.r, h-5);
+}
+
+const cases = [
+  {name:"T-perm", type:"PLL", alg:"R U R' U' R' F R2 U' R' U' R U R' F'"},
+  {name:"J-perm (Ja)", type:"PLL", alg:"L' U' L F L' U' L U L F' L2 U L"},
+  {name:"U-perm (Ua)", type:"PLL", alg:"R U' R U R U R U' R' U' R2"},
+  {name:"Sune", type:"OLL", alg:"R U R' U R U2 R'"},
+  {name:"Anti-Sune", type:"OLL", alg:"R U2 R' U' R U' R'"},
+  {name:"Headlights", type:"OLL", alg:"R2 D R' U2 R D' R' U2 R'"},
+  {name:"Basic pair setup", type:"F2L", alg:"U R U' R'"},
+  {name:"Pair insertion example", type:"F2L", alg:"U' L' U L"},
+  {name:"Cross practice", type:"Cross", alg:"Plan a solution intuitively; try to solve the cross in 8 moves or fewer."}
+];
+
+function renderCases() {
+  const filter = document.getElementById("caseFilter").value;
+  const grid = document.getElementById("caseGrid");
+  grid.replaceChildren();
+  cases.filter(c => filter === "All" || c.type === filter).forEach(c => {
+    const card = document.createElement("article");
+    card.className = "case-card";
+
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = c.type;
+
+    const title = document.createElement("div");
+    title.className = "case-title";
+    title.style.marginTop = "10px";
+    title.textContent = c.name;
+
+    const alg = document.createElement("div");
+    alg.className = "algorithm";
+    alg.textContent = c.alg;
+
+    const copy = document.createElement("button");
+    copy.textContent = "Copy algorithm";
+    copy.style.marginTop = "12px";
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(c.alg);
+        copy.textContent = "Copied!";
+      } catch {
+        window.prompt("Copy this algorithm:", c.alg);
+      }
+      setTimeout(() => copy.textContent = "Copy algorithm", 1200);
+    });
+
+    card.append(tag, title, alg, copy);
+    grid.appendChild(card);
+  });
+}
+
+function renderAll() {
+  renderStats();
+  renderHistory();
+  renderCases();
+  drawChart();
+}
+
+document.querySelectorAll(".nav button").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+    button.classList.add("active");
+    document.querySelectorAll("main > section").forEach(section => section.classList.add("hidden"));
+    document.getElementById("page-" + button.dataset.page).classList.remove("hidden");
+    if (button.dataset.page === "dashboard") drawChart();
+  });
+});
+
+document.getElementById("quickAdd").addEventListener("click", () => {
+  const input = document.getElementById("quickTime");
+  addSolve(input.value, document.getElementById("quickCategory").value);
+  input.value = "";
+});
+document.getElementById("quickTime").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("quickAdd").click();
+});
+document.getElementById("historyFilter").addEventListener("change", renderHistory);
+document.getElementById("caseFilter").addEventListener("change", renderCases);
+
+function displayTimer() {
+  const elapsed = elapsedBeforeStart + (timerRunning ? performance.now() - timerStartedAt : 0);
+  document.getElementById("timerDisplay").textContent = (elapsed/1000).toFixed(2);
+}
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerStartedAt = performance.now();
+  document.getElementById("timerToggle").textContent = "Stop & save";
+  timerInterval = setInterval(displayTimer, 20);
+  displayTimer();
+}
+
+function stopTimer() {
+  if (!timerRunning) return;
+  const elapsed = elapsedBeforeStart + performance.now() - timerStartedAt;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  elapsedBeforeStart = 0;
+  document.getElementById("timerToggle").textContent = "Start";
+  document.getElementById("timerDisplay").textContent = (elapsed/1000).toFixed(2);
+  addSolve(elapsed/1000, document.getElementById("timerCategory").value);
+}
+
+function resetTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  elapsedBeforeStart = 0;
+  document.getElementById("timerToggle").textContent = "Start";
+  document.getElementById("timerDisplay").textContent = "0.00";
+}
+
+document.getElementById("timerToggle").addEventListener("click", () => {
+  if (timerRunning) stopTimer();
+  else startTimer();
+});
+document.getElementById("timerReset").addEventListener("click", resetTimer);
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space") return;
+  const tag = document.activeElement?.tagName;
+  if (["INPUT","TEXTAREA","SELECT","BUTTON"].includes(tag)) return;
+  const timerPage = !document.getElementById("page-timer").classList.contains("hidden");
+  if (!timerPage) return;
+  e.preventDefault();
+  if (timerRunning) stopTimer();
+  else startTimer();
+});
+
+function makeScramble(length=20) {
+  const faces = ["R","L","U","D","F","B"];
+  const suffixes = ["","'","2"];
+  const result = [];
+  let previousFace = "";
+  let previousAxis = "";
+  const axis = {R:"x",L:"x",U:"y",D:"y",F:"z",B:"z"};
+  while (result.length < length) {
+    const face = faces[Math.floor(Math.random()*faces.length)];
+    if (face === previousFace || axis[face] === previousAxis) continue;
+    result.push(face + suffixes[Math.floor(Math.random()*suffixes.length)]);
+    previousFace = face;
+    previousAxis = axis[face];
+  }
+  return result.join(" ");
+}
+document.getElementById("newScramble").addEventListener("click", () => {
+  document.getElementById("scrambleText").textContent = makeScramble();
+});
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const rows = [["id","time_seconds","category","date"]];
+  solves.forEach(s => rows.push([s.id,s.time,s.category,s.date]));
+  const csv = rows.map(row => row.map(csvEscape).join(",")).join("\r\n");
+  downloadFile("cubecoach-solves.csv", csv, "text/csv;charset=utf-8");
+});
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+
+function parseCSVLine(line) {
+  const result = [];
+  let value = "";
+  let quoted = false;
+  for (let i=0; i<line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (quoted && line[i+1] === '"') {
+        value += '"'; i++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (ch === "," && !quoted) {
+      result.push(value); value = "";
+    } else {
+      value += ch;
+    }
+  }
+  result.push(value);
+  return result;
+}
+
+document.getElementById("importFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(line => line.trim());
+    if (lines.length < 2) throw new Error("No solve rows found.");
+    const headers = parseCSVLine(lines[0]).map(h => h.trim());
+    const timeIndex = headers.indexOf("time_seconds");
+    const categoryIndex = headers.indexOf("category");
+    const dateIndex = headers.indexOf("date");
+    if (timeIndex < 0 || categoryIndex < 0) {
+      throw new Error("CSV must contain time_seconds and category columns.");
+    }
+
+    const imported = [];
+    for (const line of lines.slice(1)) {
+      const cells = parseCSVLine(line);
+      const time = Number(cells[timeIndex]);
+      const category = cells[categoryIndex] || "3x3";
+      if (!Number.isFinite(time) || time <= 0) continue;
+      const rawDate = dateIndex >= 0 ? cells[dateIndex] : "";
+      const parsedDate = rawDate && !Number.isNaN(Date.parse(rawDate))
+        ? new Date(rawDate).toISOString()
+        : new Date().toISOString();
+      imported.push({
+        id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random())),
+        time,
+        category,
+        date: parsedDate
+      });
+    }
+    if (!imported.length) throw new Error("No valid solve records found.");
+    if (confirm("Import " + imported.length + " solves? Choose OK to add them to your existing history.")) {
+      solves = solves.concat(imported);
+      saveSolves();
+      renderAll();
+      alert("Import complete.");
+    }
+  } catch (error) {
+    alert("Could not import CSV: " + error.message);
+  } finally {
+    e.target.value = "";
+  }
+});
+
+document.getElementById("clearHistory").addEventListener("click", () => {
+  if (!solves.length) return;
+  if (confirm("Delete all recorded solves? Export a CSV first if you want a backup.")) {
+    solves = [];
+    saveSolves();
+    renderAll();
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (!document.getElementById("page-dashboard").classList.contains("hidden")) {
+    drawChart();
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
